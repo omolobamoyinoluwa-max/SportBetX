@@ -1,0 +1,401 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: sportbetx-postgres
+    environment:
+      POSTGRES_DB: sportbetx
+      POSTGRES_USER: sportbetx
+      POSTGRES_PASSWORD: sportbetx123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - sportbetx-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sportbetx -d sportbetx"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: sportbetx-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - sportbetx-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: sportbetx-api-gateway
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://sportbetx:sportbetx123@postgres:5432/sportbetx
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      STELLAR_NETWORK: testnet
+      STELLAR_CONTRACT_ADDRESS: ${STELLAR_CONTRACT_ADDRESS}
+      FRONTEND_URL: http://localhost:3100
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sportbetx-network
+    volumes:
+      - ./backend/api-gateway:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Betting Service
+  betting-service:
+    build:
+      context: ./backend/betting-service
+      dockerfile: Dockerfile
+    container_name: sportbetx-betting-service
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: postgresql://sportbetx:sportbetx123@postgres:5432/sportbetx
+      REDIS_URL: redis://redis:6379
+      STELLAR_NETWORK: testnet
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sportbetx-network
+    volumes:
+      - ./backend/betting-service:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Odds Service
+  odds-service:
+    build:
+      context: ./backend/odds-service
+      dockerfile: Dockerfile
+    container_name: sportbetx-odds-service
+    environment:
+      NODE_ENV: development
+      PORT: 3002
+      DATABASE_URL: postgresql://sportbetx:sportbetx123@postgres:5432/sportbetx
+      REDIS_URL: redis://redis:6379
+      STELLAR_NETWORK: testnet
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sportbetx-network
+    volumes:
+      - ./backend/odds-service:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Liquidity Service
+  liquidity-service:
+    build:
+      context: ./backend/liquidity-service
+      dockerfile: Dockerfile
+    container_name: sportbetx-liquidity-service
+    environment:
+      NODE_ENV: development
+      PORT: 3003
+      DATABASE_URL: postgresql://sportbetx:sportbetx123@postgres:5432/sportbetx
+      REDIS_URL: redis://redis:6379
+      STELLAR_NETWORK: testnet
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sportbetx-network
+    volumes:
+      - ./backend/liquidity-service:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Oracle Service
+  oracle-service:
+    build:
+      context: ./backend/oracle-service
+      dockerfile: Dockerfile
+    container_name: sportbetx-oracle-service
+    environment:
+      NODE_ENV: development
+      PORT: 3004
+      DATABASE_URL: postgresql://sportbetx:sportbetx123@postgres:5432/sportbetx
+      REDIS_URL: redis://redis:6379
+      STELLAR_NETWORK: testnet
+      SPORTS_DATA_API_KEY: ${SPORTS_DATA_API_KEY}
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sportbetx-network
+    volumes:
+      - ./backend/oracle-service:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Governance Service
+  governance-service:
+    build:
+      context: ./backend/governance-service
+      dockerfile: Dockerfile
+    container_name: sportbetx-governance-service
+    environment:
+      NODE_ENV: development
+      PORT: 3005
+      DATABASE_URL: postgresql://sportbetx:sportbetx123@postgres:5432/sportbetx
+      REDIS_URL: redis://redis:6379
+      STELLAR_NETWORK: testnet
+    ports:
+      - "3005:3005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sportbetx-network
+    volumes:
+      - ./backend/governance-service:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Betting Interface Frontend
+  betting-interface:
+    build:
+      context: ./frontend/betting-interface
+      dockerfile: Dockerfile
+    container_name: sportbetx-betting-interface
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:3000
+      VITE_STELLAR_NETWORK: testnet
+      VITE_STELLAR_CONTRACT_ADDRESS: ${STELLAR_CONTRACT_ADDRESS}
+      VITE_WEBSOCKET_URL: http://localhost:3000
+    ports:
+      - "3100:3000"
+    depends_on:
+      - api-gateway
+    networks:
+      - sportbetx-network
+    volumes:
+      - ./frontend/betting-interface:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Live Betting Frontend
+  live-betting:
+    build:
+      context: ./frontend/live-betting
+      dockerfile: Dockerfile
+    container_name: sportbetx-live-betting
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:3000
+      VITE_STELLAR_NETWORK: testnet
+      VITE_WEBSOCKET_URL: http://localhost:3000
+    ports:
+      - "3200:3000"
+    depends_on:
+      - api-gateway
+    networks:
+      - sportbetx-network
+    volumes:
+      - ./frontend/live-betting:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Liquidity Dashboard Frontend
+  liquidity-dashboard:
+    build:
+      context: ./frontend/liquidity-dashboard
+      dockerfile: Dockerfile
+    container_name: sportbetx-liquidity-dashboard
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:3000
+      VITE_STELLAR_NETWORK: testnet
+    ports:
+      - "3300:3000"
+    depends_on:
+      - api-gateway
+    networks:
+      - sportbetx-network
+    volumes:
+      - ./frontend/liquidity-dashboard:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Analytics Dashboard Frontend
+  analytics-dashboard:
+    build:
+      context: ./frontend/analytics-dashboard
+      dockerfile: Dockerfile
+    container_name: sportbetx-analytics-dashboard
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:3000
+      VITE_STELLAR_NETWORK: testnet
+    ports:
+      - "3400:3000"
+    depends_on:
+      - api-gateway
+    networks:
+      - sportbetx-network
+    volumes:
+      - ./frontend/analytics-dashboard:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Governance UI Frontend
+  governance-ui:
+    build:
+      context: ./frontend/governance-ui
+      dockerfile: Dockerfile
+    container_name: sportbetx-governance-ui
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:3000
+      VITE_STELLAR_NETWORK: testnet
+      VITE_GOVERNANCE_CONTRACT: ${GOVERNANCE_CONTRACT}
+    ports:
+      - "3500:3000"
+    depends_on:
+      - api-gateway
+      - governance-service
+    networks:
+      - sportbetx-network
+    volumes:
+      - ./frontend/governance-ui:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Stellar Testnet (for development)
+  stellar-testnet:
+    image: stellar/stellar-core:latest
+    container_name: sportbetx-stellar-testnet
+    ports:
+      - "11626:11626"
+      - "8000:8000"
+    volumes:
+      - stellar_data:/data
+    networks:
+      - sportbetx-network
+    command:
+      - '--conf /stellar-core/etc/stellar-core.cfg'
+      - '--database /data/stellar-core.db'
+      - '--http-port 8000'
+      - '--public-http-port 11626'
+      - '--network-passphrase "Standalone Network ; February 2017"'
+      - '--force-scp'
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sportbetx-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - sportbetx-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sportbetx-grafana
+    ports:
+      - "9091:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - sportbetx-network
+    depends_on:
+      - prometheus
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: sportbetx-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/ssl:/etc/nginx/ssl
+    depends_on:
+      - betting-interface
+      - live-betting
+      - liquidity-dashboard
+      - analytics-dashboard
+      - governance-ui
+    networks:
+      - sportbetx-network
+    command: nginx -g 'daemon off;'
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  stellar_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  sportbetx-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.24.0.0/16
