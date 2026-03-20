@@ -1,6 +1,6 @@
 # 🏈 SportBetX: Decentralized Sports Betting Platform
 
-[![Build Status](https://github.com/ChainNova-Labs/SportBetX/workflows/CI/badge.svg)
+[![Build Status](https://github.com/olaleyeolajide81-sketch/SportBetX/workflows/CI/badge.svg)
 [![Coverage](https://img.shields.io/badge/coverage-85%25-green)
 [![License](https://img.shields.io/badge/license-MIT-blue)
 [![Stellar](https://img.shields.io/badge/blockchain-Stellar-purple)]
@@ -283,3 +283,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **🏈 Revolutionizing sports betting with transparency and fairness on Stellar, one bet at a time!**
+=======
+# SportBetX
+Complete Decentralized Sports Betting Platform
+>>>>>>> f466627823522e3b569c2e334c097826bfde8a04
