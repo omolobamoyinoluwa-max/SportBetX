@@ -20,7 +20,7 @@ import { oddsRoutes } from './routes/odds';
 import { liquidityRoutes } from './routes/liquidity';
 import { oracleRoutes } from './routes/oracle';
 import { governanceRoutes } from './routes/governance';
-import { initializeSocketHandlers } from './services/socketService';
+import { initializeSocketHandlers, stopSocketServices } from './services/socketService';
 
 // Load environment variables
 dotenv.config();
@@ -236,6 +236,7 @@ async function startServer() {
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
+  stopSocketServices();
   server.close(() => {
     logger.info('Server closed');
     process.exit(0);
@@ -244,6 +245,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully');
+  stopSocketServices();
   server.close(() => {
     logger.info('Server closed');
     process.exit(0);
