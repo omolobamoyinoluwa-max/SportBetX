@@ -7,12 +7,13 @@ import compression from 'compression';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
+import client from 'prom-client';
 
 import { errorHandler } from './middleware/errorHandler';
 import { stellarErrorMiddleware } from './middleware/stellarErrorHandler';
 import { leaderboardRouter } from './routes/leaderboard';
 import { logger } from './utils/logger';
-import { connectRedis } from './config/redis';
+import { connectRedis, isRedisConnected } from './config/redis';
 import { connectDatabase } from './config/database';
 import { bettingRoutes } from './routes/betting';
 import { oddsRoutes } from './routes/odds';
@@ -26,6 +27,37 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Prometheus metrics (issue #17)
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
+
+export const httpRequestCounter = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total HTTP requests',
+  labelNames: ['method', 'route', 'status'],
+  registers: [register],
+});
+
+export const httpRequestDuration = new client.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'HTTP request duration in seconds',
+  labelNames: ['method', 'route'],
+  buckets: [0.01, 0.05, 0.1, 0.3, 0.5, 1, 2, 5],
+  registers: [register],
+});
+
+export const betPlacementCounter = new client.Counter({
+  name: 'bet_placements_total',
+  help: 'Total bet placements',
+  registers: [register],
+});
+
+export const activeWsConnections = new client.Gauge({
+  name: 'websocket_connections_active',
+  help: 'Active WebSocket connections',
+  registers: [register],
+});
 
 // Rate limiting
 const limiter = rateLimit({
@@ -79,6 +111,16 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(limiter);
 
+// Track request metrics (issue #17)
+app.use((req, res, next) => {
+  const end = httpRequestDuration.startTimer({ method: req.method, route: req.path });
+  res.on('finish', () => {
+    httpRequestCounter.inc({ method: req.method, route: req.path, status: res.statusCode });
+    end();
+  });
+  next();
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -88,12 +130,23 @@ app.get('/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     services: {
       database: 'connected',
-      redis: 'connected',
+      redis: isRedisConnected() ? 'connected' : 'unavailable',
       stellar: 'connected',
       oracle: 'connected',
     },
     version: process.env.npm_package_version || '1.0.0',
   });
+});
+
+// Prometheus metrics endpoint (issue #17) - restricted to internal network
+app.get('/metrics', async (req, res) => {
+  const allowedIPs = (process.env.METRICS_ALLOWED_IPS || '127.0.0.1,::1,::ffff:127.0.0.1').split(',');
+  const clientIP = req.ip || '';
+  if (process.env.NODE_ENV === 'production' && !allowedIPs.includes(clientIP)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  res.set('Content-Type', register.contentType);
+  return res.end(await register.metrics());
 });
 
 // API documentation endpoint
@@ -150,6 +203,10 @@ const io = new SocketIOServer(server, {
 
 // Initialize Socket.IO handlers
 initializeSocketHandlers(io);
+
+// Track active WebSocket connections (issue #17)
+io.on('connection', () => activeWsConnections.inc());
+io.on('disconnect', () => activeWsConnections.dec());
 
 // Start server
 async function startServer() {

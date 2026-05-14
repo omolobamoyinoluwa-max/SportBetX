@@ -2,19 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
-  TrendingDown, 
   Clock, 
   Trophy, 
   Users,
-  Filter,
   Search
 } from 'lucide-react';
 import { useBettingStore } from '../store/bettingStore';
 import { useWalletStore } from '../store/walletStore';
 import { BetSlip } from '../components/BetSlip';
-import { OddsDisplay } from '../components/OddsDisplay';
 import { EventCard } from '../components/EventCard';
-import { BetHistory } from '../components/BetHistory';
 import { SportsFilter } from '../components/SportsFilter';
 import { LiveScore } from '../components/LiveScore';
 import { SportsEvent, BetType } from '../types/sports';
@@ -41,6 +37,7 @@ export const BettingInterface: React.FC = () => {
   useEffect(() => {
     // Fetch events from API
     fetchEvents();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSport, showLiveOnly, sortBy]);
 
   const fetchEvents = async () => {
@@ -204,7 +201,7 @@ export const BettingInterface: React.FC = () => {
             
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as 'time' | 'odds' | 'volume')}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="time">Sort by Time</option>
@@ -214,7 +211,7 @@ export const BettingInterface: React.FC = () => {
 
             <select
               value={oddsFormat}
-              onChange={(e) => setOddsFormat(e.target.value as any)}
+              onChange={(e) => setOddsFormat(e.target.value as 'decimal' | 'american' | 'fractional')}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="decimal">Decimal</option>

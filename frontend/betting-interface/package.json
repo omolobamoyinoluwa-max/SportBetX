@@ -16,8 +16,6 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@sportbetx/sdk": "workspace:*",
-    "@soroban-react/soroban": "^1.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.8.1",
@@ -28,9 +26,6 @@
     "react-chartjs-2": "^5.2.0",
     "date-fns": "^2.30.0",
     "decimal.js": "^10.4.3",
-    "wagmi": "^1.4.7",
-    "viem": "^1.18.9",
-    "@rainbow-me/rainbowkit": "^1.3.0",
     "lucide-react": "^0.288.0",
     "clsx": "^2.0.0",
     "tailwind-merge": "^1.14.0",
