@@ -21,6 +21,7 @@ import { liquidityRoutes } from './routes/liquidity';
 import { oracleRoutes } from './routes/oracle';
 import { governanceRoutes } from './routes/governance';
 import { initializeSocketHandlers } from './services/socketService';
+import { notificationRoutes } from './routes/notifications';
 
 // Load environment variables
 dotenv.config();
@@ -161,6 +162,7 @@ app.get('/api/v1/docs', (req, res) => {
       liquidity: '/api/v1/liquidity',
       oracle: '/api/v1/oracle',
       governance: '/api/v1/governance',
+      notifications: '/api/v1/notifications',
       leaderboard: '/api/v1/leaderboard',
     },
     websocket: '/socket.io',
@@ -173,6 +175,7 @@ app.use('/api/v1/odds', oddsRoutes);
 app.use('/api/v1/liquidity', liquidityRoutes);
 app.use('/api/v1/oracle', oracleRoutes);
 app.use('/api/v1/governance', governanceRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/leaderboard', leaderboardRouter);
 
 // 404 handler
