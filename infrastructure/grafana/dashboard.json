@@ -1,0 +1,26 @@
+{
+  "title": "SportBetX API Gateway",
+  "uid": "sportbetx-api",
+  "panels": [
+    {
+      "title": "Request Rate",
+      "type": "graph",
+      "targets": [{ "expr": "rate(http_requests_total[1m])", "legendFormat": "{{method}} {{route}}" }]
+    },
+    {
+      "title": "Request Duration (p95)",
+      "type": "graph",
+      "targets": [{ "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))", "legendFormat": "p95" }]
+    },
+    {
+      "title": "Active WebSocket Connections",
+      "type": "stat",
+      "targets": [{ "expr": "websocket_connections_active" }]
+    },
+    {
+      "title": "Bet Placement Rate",
+      "type": "graph",
+      "targets": [{ "expr": "rate(bet_placements_total[1m])", "legendFormat": "bets/s" }]
+    }
+  ]
+}
