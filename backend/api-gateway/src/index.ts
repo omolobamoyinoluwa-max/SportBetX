@@ -21,6 +21,7 @@ import { liquidityRoutes } from './routes/liquidity';
 import { oracleRoutes } from './routes/oracle';
 import { governanceRoutes } from './routes/governance';
 import { initializeSocketHandlers } from './services/socketService';
+import { searchRoutes } from './routes/search';
 
 // Load environment variables
 dotenv.config();
@@ -173,6 +174,7 @@ app.use('/api/v1/odds', oddsRoutes);
 app.use('/api/v1/liquidity', liquidityRoutes);
 app.use('/api/v1/oracle', oracleRoutes);
 app.use('/api/v1/governance', governanceRoutes);
+app.use('/api/v1/search', searchRoutes);
 app.use('/api/v1/leaderboard', leaderboardRouter);
 
 // 404 handler
