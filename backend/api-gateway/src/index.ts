@@ -9,6 +9,8 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 
 import { errorHandler } from './middleware/errorHandler';
+import { stellarErrorMiddleware } from './middleware/stellarErrorHandler';
+import { leaderboardRouter } from './routes/leaderboard';
 import { logger } from './utils/logger';
 import { connectRedis } from './config/redis';
 import { connectDatabase } from './config/database';
@@ -34,23 +36,43 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Build CORS allowlist from env (comma-separated) or fall back to dev default
+const corsAllowlist: string[] = process.env.CORS_ALLOWED_ORIGINS
+  ? process.env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+  : ['http://localhost:3100'];
+
+const isProduction = process.env.NODE_ENV === 'production';
+
 // Middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "ws:", "wss:"],
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", 'ws:', 'wss:'],
+      },
     },
-  },
-}));
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3100',
-  credentials: true,
-}));
+    // Enable HSTS only in production
+    hsts: isProduction
+      ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+      : false,
+  })
+);
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. server-to-server, curl)
+      if (!origin) return callback(null, true);
+      if (corsAllowlist.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin '${origin}' not allowed`));
+    },
+    credentials: true,
+  })
+);
 app.use(compression());
 app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
 app.use(express.json({ limit: '10mb' }));
@@ -86,6 +108,7 @@ app.get('/api/v1/docs', (req, res) => {
       liquidity: '/api/v1/liquidity',
       oracle: '/api/v1/oracle',
       governance: '/api/v1/governance',
+      leaderboard: '/api/v1/leaderboard',
     },
     websocket: '/socket.io',
   });
@@ -97,6 +120,7 @@ app.use('/api/v1/odds', oddsRoutes);
 app.use('/api/v1/liquidity', liquidityRoutes);
 app.use('/api/v1/oracle', oracleRoutes);
 app.use('/api/v1/governance', governanceRoutes);
+app.use('/api/v1/leaderboard', leaderboardRouter);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -108,6 +132,7 @@ app.use('*', (req, res) => {
 });
 
 // Error handling middleware
+app.use(stellarErrorMiddleware);
 app.use(errorHandler);
 
 // Create HTTP server
@@ -116,7 +141,7 @@ const server = createServer(app);
 // Create Socket.IO server
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3100',
+    origin: corsAllowlist,
     methods: ['GET', 'POST'],
     credentials: true,
   },
