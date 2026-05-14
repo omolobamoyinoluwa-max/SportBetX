@@ -14,6 +14,7 @@ import { EventCard } from '../components/EventCard';
 import { SportsFilter } from '../components/SportsFilter';
 import { LiveScore } from '../components/LiveScore';
 import { SportsEvent, BetType } from '../types/sports';
+import { convertOdds, OddsFormat } from '../utils/oddsConverter';
 
 export const BettingInterface: React.FC = () => {
   const {
@@ -140,16 +141,7 @@ export const BettingInterface: React.FC = () => {
   });
 
   const formatOdds = (odds: number) => {
-    switch (oddsFormat) {
-      case 'decimal':
-        return (odds / 100).toFixed(2);
-      case 'american':
-        return odds > 100 ? `+${odds - 100}` : `-${100 - odds}`;
-      case 'fractional':
-        return `${odds}/100`;
-      default:
-        return (odds / 100).toFixed(2);
-    }
+    return convertOdds(odds / 100, 'decimal', oddsFormat as OddsFormat);
   };
 
   return (
