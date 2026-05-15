@@ -14,6 +14,7 @@ import { EventCard } from '../components/EventCard';
 import { SportsFilter } from '../components/SportsFilter';
 import { LiveScore } from '../components/LiveScore';
 import { SportsEvent, BetType } from '../types/sports';
+import { useI18n } from '../i18n/I18nProvider';
 
 export const BettingInterface: React.FC = () => {
   const {
@@ -29,6 +30,7 @@ export const BettingInterface: React.FC = () => {
   } = useBettingStore();
 
   const { isConnected, account } = useWalletStore();
+  const { t } = useI18n();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSport, setSelectedSport] = useState('all');
   const [showLiveOnly, setShowLiveOnly] = useState(false);
@@ -165,14 +167,14 @@ export const BettingInterface: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Sports Betting
+              {t.betting.title}
             </h1>
             <div className="flex items-center space-x-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search events..."
+                  placeholder={t.betting.search}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -214,9 +216,9 @@ export const BettingInterface: React.FC = () => {
               onChange={(e) => setOddsFormat(e.target.value as 'decimal' | 'american' | 'fractional')}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option value="decimal">Decimal</option>
-              <option value="american">American</option>
-              <option value="fractional">Fractional</option>
+              <option value="decimal">{t.betting.decimal}</option>
+              <option value="american">{t.betting.american}</option>
+              <option value="fractional">{t.betting.fractional}</option>
             </select>
           </div>
         </div>
@@ -250,7 +252,7 @@ export const BettingInterface: React.FC = () => {
           <div className="flex items-center space-x-2 mb-4">
             <Trophy className="w-5 h-5 text-green-500" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Live Scores
+              {t.liveScores.title}
             </h2>
           </div>
           

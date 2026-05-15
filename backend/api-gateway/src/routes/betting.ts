@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { body, param, query } from 'express-validator';
 import { validate } from '../middleware/validate';
+import { stellarAddressRateLimiter } from '../middleware/rateLimiter';
 import { getOrSet, invalidateKey } from '../config/redis';
 import { logger } from '../utils/logger';
 
@@ -102,6 +103,7 @@ bettingRoutes.post(
     body('selection').isIn(['home', 'away', 'draw']).withMessage('selection must be home, away, or draw'),
   ],
   validate,
+  stellarAddressRateLimiter,
   async (req: Request, res: Response) => {
     const { eventId, amount, selection } = req.body as {
       eventId: string; amount: number; selection: string;
