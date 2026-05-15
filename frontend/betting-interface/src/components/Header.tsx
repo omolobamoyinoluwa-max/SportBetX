@@ -1,9 +1,18 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useThemeStore } from '../store/themeStore';
 import { useWalletStore } from '../store/walletStore';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from './LanguageSwitcher';
+
+const navItems = [
+  { path: '/', label: 'Betting' },
+  { path: '/live', label: 'Live' },
+  { path: '/history', label: 'History' },
+  { path: '/profile', label: 'Profile' },
+  { path: '/governance', label: 'Governance' },
+  { path: '/leaderboard', label: 'Leaderboard' },
+];
 
 export const Header: React.FC = () => {
   const { isDarkMode, toggleDarkMode } = useThemeStore();
@@ -31,6 +40,6 @@ export const Header: React.FC = () => {
           {isConnected ? `${account?.slice(0, 6)}…` : t.wallet.connect}
         </button>
       </div>
-    </header>
+    </>
   );
 };
