@@ -20,6 +20,7 @@ import { oddsRoutes } from './routes/odds';
 import { liquidityRoutes } from './routes/liquidity';
 import { oracleRoutes } from './routes/oracle';
 import { governanceRoutes } from './routes/governance';
+import { authRoutes } from './routes/auth';
 import { initializeSocketHandlers } from './services/socketService';
 import { responsibleGamblingRoutes } from './routes/responsibleGambling';
 
