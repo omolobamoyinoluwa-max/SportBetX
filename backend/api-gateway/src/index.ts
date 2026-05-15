@@ -22,6 +22,7 @@ import { oracleRoutes } from './routes/oracle';
 import { governanceRoutes } from './routes/governance';
 import { authRoutes } from './routes/auth';
 import { initializeSocketHandlers } from './services/socketService';
+import { responsibleGamblingRoutes } from './routes/responsibleGambling';
 
 // Load environment variables
 dotenv.config();
@@ -162,7 +163,7 @@ app.get('/api/v1/docs', (req, res) => {
       liquidity: '/api/v1/liquidity',
       oracle: '/api/v1/oracle',
       governance: '/api/v1/governance',
-      auth: '/api/v1/auth',
+      responsibleGambling: '/api/v1/responsible-gambling',
       leaderboard: '/api/v1/leaderboard',
     },
     websocket: '/socket.io',
@@ -175,7 +176,7 @@ app.use('/api/v1/odds', oddsRoutes);
 app.use('/api/v1/liquidity', liquidityRoutes);
 app.use('/api/v1/oracle', oracleRoutes);
 app.use('/api/v1/governance', governanceRoutes);
-app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/responsible-gambling', responsibleGamblingRoutes);
 app.use('/api/v1/leaderboard', leaderboardRouter);
 
 // 404 handler
@@ -239,6 +240,7 @@ async function startServer() {
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
+  stopSocketServices();
   server.close(() => {
     logger.info('Server closed');
     process.exit(0);
@@ -247,6 +249,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully');
+  stopSocketServices();
   server.close(() => {
     logger.info('Server closed');
     process.exit(0);
