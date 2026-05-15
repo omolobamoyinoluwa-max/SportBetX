@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
   Clock, 
   Trophy, 
   Users,
-  Search
+  Search,
+  Loader2
 } from 'lucide-react';
 import { useBettingStore } from '../store/bettingStore';
 import { useWalletStore } from '../store/walletStore';
@@ -35,58 +36,39 @@ export const BettingInterface: React.FC = () => {
   const [selectedSport, setSelectedSport] = useState('all');
   const [showLiveOnly, setShowLiveOnly] = useState(false);
   const [sortBy, setSortBy] = useState<'time' | 'odds' | 'volume'>('time');
+  const [searching, setSearching] = useState(false);
 
-  useEffect(() => {
-    // Fetch events from API
-    fetchEvents();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSport, showLiveOnly, sortBy]);
+  const debouncedSearch = useDebounce(searchTerm, 300);
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async (term: string) => {
+    setSearching(true);
     try {
-      // TODO: Implement API call
-      const mockEvents: SportsEvent[] = [
-        {
-          id: '1',
-          title: 'Lakers vs Celtics',
-          sport: 'basketball',
-          homeTeam: 'Lakers',
-          awayTeam: 'Celtics',
-          startTime: Date.now() + 3600000,
-          endTime: Date.now() + 7200000,
-          status: 'upcoming',
-          outcome: 'pending',
-          odds: {
-            home: 180, // 1.8x
-            away: 200, // 2.0x
-            draw: 350, // 3.5x
-          },
-          volume: 50000000, // 5 XLM
-        },
-        {
-          id: '2',
-          title: 'Real Madrid vs Barcelona',
-          sport: 'football',
-          homeTeam: 'Real Madrid',
-          awayTeam: 'Barcelona',
-          startTime: Date.now() + 7200000,
-          endTime: Date.now() + 10800000,
-          status: 'live',
-          outcome: 'pending',
-          odds: {
-            home: 150, // 1.5x
-            away: 250, // 2.5x
-            draw: 300, // 3.0x
-          },
-          volume: 75000000, // 7.5 XLM
-        },
-      ];
-      
-      setEvents(mockEvents);
+      const status = showLiveOnly ? 'live' : undefined;
+      const result = await searchEvents(term, selectedSport, status);
+      const mapped: SportsEvent[] = result.data.map((e) => ({
+        id: e.id,
+        title: e.title,
+        sport: e.sport,
+        homeTeam: e.homeTeam,
+        awayTeam: e.awayTeam,
+        startTime: e.startTime,
+        endTime: e.startTime + 3600000,
+        status: e.status as 'upcoming' | 'live' | 'finished',
+        outcome: 'pending',
+        odds: e.odds,
+        volume: e.volume,
+      }));
+      setEvents(mapped);
     } catch (error) {
       console.error('Failed to fetch events:', error);
+    } finally {
+      setSearching(false);
     }
-  };
+  }, [selectedSport, showLiveOnly, setEvents]);
+
+  useEffect(() => {
+    fetchEvents(debouncedSearch);
+  }, [debouncedSearch, fetchEvents]);
 
   const handleEventSelect = (event: SportsEvent, selection: string, odds: number) => {
     const betSelection = {
@@ -171,7 +153,11 @@ export const BettingInterface: React.FC = () => {
             </h1>
             <div className="flex items-center space-x-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                {searching ? (
+                  <Loader2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 animate-spin" />
+                ) : (
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                )}
                 <input
                   type="text"
                   placeholder={t.betting.search}
