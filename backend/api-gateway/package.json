@@ -16,8 +16,6 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@soroban-react/soroban": "^1.0.0",
-    "stellar-sdk": "^12.0.0",
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "helmet": "^7.1.0",
@@ -35,7 +33,9 @@
     "compression": "^1.7.4",
     "express-validator": "^7.0.1",
     "node-cron": "^3.0.3",
-    "web-push": "^3.6.3"
+    "web-push": "^3.6.3",
+    "prom-client": "^15.1.0",
+    "pg": "^8.11.3"
   },
   "devDependencies": {
     "@types/node": "^20.9.0",
@@ -49,6 +49,7 @@
     "@types/web-push": "^3.6.3",
     "@types/node-cron": "^3.0.11",
     "@types/jest": "^29.5.8",
+    "@types/supertest": "^2.0.16",
     "@typescript-eslint/eslint-plugin": "^6.12.0",
     "@typescript-eslint/parser": "^6.12.0",
     "eslint": "^8.54.0",
@@ -57,7 +58,9 @@
     "prettier": "^3.1.0",
     "ts-jest": "^29.1.1",
     "tsx": "^4.6.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "@types/pg": "^8.10.9",
+    "supertest": "^6.3.3"
   },
   "engines": {
     "node": ">=18.0.0",
