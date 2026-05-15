@@ -239,6 +239,7 @@ async function startServer() {
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
+  stopSocketServices();
   server.close(() => {
     logger.info('Server closed');
     process.exit(0);
@@ -247,6 +248,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully');
+  stopSocketServices();
   server.close(() => {
     logger.info('Server closed');
     process.exit(0);
